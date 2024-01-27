@@ -1,16 +1,22 @@
-from flask import jsonify, request
 from http import HTTPStatus
 
-from . import app
+from flask import jsonify, request
+
 from .error_handlers import InvalidAPIUsage
 from .models import URLMap
 
+from . import app
 
-@app.route('/api/id/<short_id>/', methods=['GET'])
-def get_original_link(short_id):
-    url_map = URLMap.get_by_short_id(short_id)
+NOT_FOUND_MESSAGE = 'Указанный id не найден'
+URL_REQUIRED_MESSAGE = '"url" является обязательным полем!'
+NO_DATA_MESSAGE = 'Отсутствует тело запроса'
+
+
+@app.route('/api/id/<short>/', methods=['GET'])
+def get_original_link(short):
+    url_map = URLMap.get(short=short)
     if url_map is None:
-        raise InvalidAPIUsage('Указанный id не найден', HTTPStatus.NOT_FOUND)
+        raise InvalidAPIUsage(NOT_FOUND_MESSAGE, HTTPStatus.NOT_FOUND)
     return jsonify({'url': url_map.original}), HTTPStatus.OK
 
 
@@ -18,13 +24,13 @@ def get_original_link(short_id):
 def add_url():
     data = request.get_json()
     if not data:
-        raise InvalidAPIUsage('Отсутствует тело запроса')
+        raise InvalidAPIUsage(NO_DATA_MESSAGE)
     if 'url' not in data or data['url'] is None:
-        raise InvalidAPIUsage('\"url\" является обязательным полем!')
+        raise InvalidAPIUsage(URL_REQUIRED_MESSAGE)
 
-    custom_id = data.get('custom_id')
+    short = data.get('custom_id')
     try:
-        url_map = URLMap.create(original_link=data['url'], custom_id=custom_id)
+        url_map = URLMap.create(original_link=data['url'], short=short)
     except ValueError as error:
         raise InvalidAPIUsage(f'{str(error)}')
     return jsonify(url_map.to_dict()), HTTPStatus.CREATED

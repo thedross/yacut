@@ -1,6 +1,5 @@
 from flask import abort, flash, redirect, render_template, url_for
 
-
 from . import app
 from .constants import LINK_TO_ORIGINAL_FUNCTION
 from .forms import URLForm
@@ -16,7 +15,8 @@ def index_view():
     try:
         url_map = URLMap.create(
             original_link=form.original_link.data,
-            custom_id=form.custom_id.data
+            short=form.custom_id.data,
+            from_form=True
         )
     except ValueError as error:
         flash(str(error))
@@ -34,7 +34,7 @@ def index_view():
 
 @app.route('/<short_id>')
 def link_to_original(short_id):
-    url_map = URLMap.get_by_short_id(short_id)
+    url_map = URLMap.get(short_id)
     if url_map is None:
         abort(404)
     return redirect(url_map.original)
