@@ -1,9 +1,10 @@
-from flask import flash, redirect, render_template
+from flask import abort, flash, redirect, render_template, url_for
 
-from . import app, db
+
+from . import app
+from .constants import LINK_TO_ORIGINAL_FUNCTION
 from .forms import URLForm
 from .models import URLMap
-from .utils import check_unique_short_link, check_url_symbols, get_unique_short_link
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -11,25 +12,29 @@ def index_view():
     form = URLForm()
     if not form.validate_on_submit():
         return render_template('index.html', form=form)
-    custom_id = form.custom_id.data
-    if not custom_id:
-        custom_id = get_unique_short_link()
-    if not check_unique_short_link(custom_id):
-        flash('Предложенный вариант короткой ссылки уже существует.')
+
+    try:
+        url_map = URLMap.create(
+            original_link=form.original_link.data,
+            custom_id=form.custom_id.data
+        )
+    except ValueError as error:
+        flash(str(error))
         return render_template('index.html', form=form)
-    if not check_url_symbols(custom_id):
-        flash('Указано недопустимое имя для короткой ссылки')
-        return render_template('index.html', form=form)
-    url = URLMap(
-        original=form.original_link.data,
-        short=custom_id
+    return render_template(
+        'index.html',
+        short_link=url_for(
+            LINK_TO_ORIGINAL_FUNCTION,
+            short_id=url_map.short,
+            _external=True
+        ),
+        form=form
     )
-    db.session.add(url)
-    db.session.commit()
-    return render_template('index.html', url=url, form=form)
 
 
 @app.route('/<short_id>')
 def link_to_original(short_id):
-    url = URLMap.query.filter_by(short=short_id).first_or_404()
-    return redirect(url.original)
+    url_map = URLMap.get_by_short_id(short_id)
+    if url_map is None:
+        abort(404)
+    return redirect(url_map.original)
