@@ -30,7 +30,11 @@ def add_url():
 
     short = data.get('custom_id')
     try:
-        url_map = URLMap.create(original_link=data['url'], short=short)
+        return jsonify(
+            URLMap.create(
+                original_link=data['url'],
+                short=short
+            ).to_dict()
+        ), HTTPStatus.CREATED
     except ValueError as error:
-        raise InvalidAPIUsage(f'{str(error)}')
-    return jsonify(url_map.to_dict()), HTTPStatus.CREATED
+        raise InvalidAPIUsage(str(error))

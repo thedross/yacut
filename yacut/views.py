@@ -13,23 +13,22 @@ def index_view():
         return render_template('index.html', form=form)
 
     try:
-        url_map = URLMap.create(
-            original_link=form.original_link.data,
-            short=form.custom_id.data,
-            from_form=True
+        return render_template(
+            'index.html',
+            short_link=url_for(
+                LINK_TO_ORIGINAL_FUNCTION,
+                short_id=URLMap.create(
+                    original_link=form.original_link.data,
+                    short=form.custom_id.data,
+                    flag=True
+                ).short,
+                _external=True
+            ),
+            form=form
         )
     except ValueError as error:
         flash(str(error))
         return render_template('index.html', form=form)
-    return render_template(
-        'index.html',
-        short_link=url_for(
-            LINK_TO_ORIGINAL_FUNCTION,
-            short_id=url_map.short,
-            _external=True
-        ),
-        form=form
-    )
 
 
 @app.route('/<short_id>')

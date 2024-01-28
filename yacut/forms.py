@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, URLField
 from wtforms.validators import DataRequired, Length, Optional, Regexp, URL, ValidationError
 
-from .constants import SHORT_REGEX, ORIGINAL_LINK_LENGTH_MAX, SHORT_LINK_LENGTH_MANUAL
+from .constants import SHORT_REGEX, ORIGINAL_LINK_LENGTH_MAX, SHORT_LENGTH_MANUAL
 from .models import URLMap
 
 
@@ -12,7 +12,7 @@ CORRECT_URL_MESSAGE = 'Некорректный адрес ссылки'
 YOUR_SHORT_LINK_CHOICE_MESSAGE = 'Ваш вариант короткой ссылки до 16 символов'
 ALLOWED_SYMBOLS_MESSAGE = ('Недопустимые символы. '
                            'Допустимы только буквы "a-Z" и цифры "0-9"')
-SHORT_LINK_EXISTS_MESSAGE = 'Предложенный вариант короткой ссылки уже существует.'
+SHORT_EXISTS_MESSAGE = 'Предложенный вариант короткой ссылки уже существует.'
 
 
 class URLForm(FlaskForm):
@@ -25,7 +25,7 @@ class URLForm(FlaskForm):
     custom_id = StringField(
         YOUR_SHORT_LINK_CHOICE_MESSAGE,
         validators=[
-            Length(max=SHORT_LINK_LENGTH_MANUAL),
+            Length(max=SHORT_LENGTH_MANUAL),
             Optional(),
             Regexp(regex=SHORT_REGEX,
                    message=ALLOWED_SYMBOLS_MESSAGE)
@@ -35,5 +35,5 @@ class URLForm(FlaskForm):
 
     def validate_custom_id(self, field):
         if field.data and URLMap.get(field.data):
-            raise ValidationError(SHORT_LINK_EXISTS_MESSAGE)
+            raise ValidationError(SHORT_EXISTS_MESSAGE)
         return field.data
